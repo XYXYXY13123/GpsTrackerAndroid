@@ -10,6 +10,9 @@ Android-App, die per GPS die Geschwindigkeit misst und sie regelmäßig auf Deut
 - Musik wird während der Ansage kurz leiser
 - Optional: keine Ansage im Stillstand
 - Zahl antippen = sofortige Ansage
+- **ISS-Überflüge:** Benachrichtigung 5–30 Minuten bevor die Raumstation über dich fliegt
+  (mind. 10° über dem Horizont), mit Richtung, Höhe und ob sie mit bloßem Auge sichtbar ist.
+  Bahndaten kommen zweimal täglich von celestrak.org, berechnet wird direkt am Handy (SGP4).
 
 ## Installieren
 1. Android Studio installieren: https://developer.android.com/studio
@@ -26,6 +29,9 @@ die APK-Datei aufs Handy kopieren und dort öffnen (Installation aus unbekannten
 - `MainActivity.kt` – Bildschirm, Einstellungen, Berechtigungen
 - `SpeedService.kt` – GPS-Abfrage, Sprachausgabe, Benachrichtigung
 - `Prefs.kt` – gespeicherte Einstellungen und Einheiten
+- `iss/Sgp4.kt` – Bahnberechnung (SGP4, geprüft gegen die offiziellen Testwerte)
+- `iss/IssPredictor.kt` – Überflüge, Sonnenstand, Erdschatten
+- `iss/IssScheduler.kt` – Bahndaten laden, Wecker planen, Benachrichtigungen
 
 ## Hinweise
 - GPS braucht freie Sicht zum Himmel; im Gebäude kommt oft kein Signal.

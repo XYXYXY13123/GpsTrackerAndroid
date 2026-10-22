@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Vereinfachtes Raumstation-Symbol: Rumpf mit vier Solarflügeln -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Solarflügel links -->
+    <path android:fillColor="#FFFFFFFF" android:pathData="M1,4h6v6h-6z" />
+    <path android:fillColor="#FFFFFFFF" android:pathData="M1,14h6v6h-6z" />
+    <!-- Solarflügel rechts -->
+    <path android:fillColor="#FFFFFFFF" android:pathData="M17,4h6v6h-6z" />
+    <path android:fillColor="#FFFFFFFF" android:pathData="M17,14h6v6h-6z" />
+    <!-- Träger und Modul -->
+    <path android:fillColor="#FFFFFFFF" android:pathData="M7,11h10v2h-10z" />
+    <path android:fillColor="#FFFFFFFF" android:pathData="M10,8h4v8h-4z" />
+</vector>

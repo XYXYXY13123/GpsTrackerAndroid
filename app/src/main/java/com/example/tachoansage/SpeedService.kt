@@ -25,6 +25,7 @@ import android.os.Looper
 import android.os.SystemClock
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
+import com.example.tachoansage.iss.IssScheduler
 import java.util.Locale
 import kotlin.math.roundToInt
 
@@ -164,7 +165,15 @@ class SpeedService : Service(), LocationListener, TextToSpeech.OnInitListener {
 
         val unit = Prefs.unit(this)
         updateNotification("${unit.convert(currentSpeedMs).roundToInt()} ${unit.label}")
+
+        // Standort alle 10 Minuten für die ISS-Berechnung merken
+        if (location.time - lastObserverSave > 10 * 60_000L) {
+            lastObserverSave = location.time
+            IssScheduler.saveObserver(this, location)
+        }
     }
+
+    private var lastObserverSave = 0L
 
     /** Fallback, falls das Gerät keine Geschwindigkeit liefert: Strecke / Zeit. */
     private fun speedFromDistance(location: Location): Float {

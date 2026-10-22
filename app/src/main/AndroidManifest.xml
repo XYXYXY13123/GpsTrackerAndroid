@@ -9,6 +9,14 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <!-- ISS-Überflüge: Bahndaten laden, pünktlich benachrichtigen, nach Neustart neu planen -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+    <uses-permission
+        android:name="android.permission.SCHEDULE_EXACT_ALARM"
+        android:maxSdkVersion="32" />
+
     <!-- Nötig, damit die Sprachausgabe (TextToSpeech) ab Android 11 gefunden wird -->
     <queries>
         <intent>
@@ -36,5 +44,18 @@
             android:name=".SpeedService"
             android:exported="false"
             android:foregroundServiceType="location" />
+
+        <receiver
+            android:name=".iss.IssAlarmReceiver"
+            android:exported="false" />
+
+        <receiver
+            android:name=".iss.IssRefreshReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
     </application>
 </manifest>
