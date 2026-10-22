@@ -11,6 +11,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
 import android.graphics.drawable.Icon
+import android.location.GnssStatus
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
@@ -54,9 +55,25 @@ class SpeedService : Service(), LocationListener, TextToSpeech.OnInitListener {
         @Volatile var currentSpeedMs = 0f
             private set
         @Volatile private var lastFixTime = 0L
+        @Volatile private var lastPositionTime = 0L
+        @Volatile private var startTime = 0L
+
+        /** Satelliten, die das Handy gerade empfängt bzw. für die Position nutzt. */
+        @Volatile var satellitesInView = 0
+            private set
+        @Volatile var satellitesUsed = 0
+            private set
 
         fun hasFix(): Boolean =
             isRunning && lastFixTime > 0 && SystemClock.elapsedRealtime() - lastFixTime < FIX_TIMEOUT_MS
+
+        /** Standort bekannt (z. B. über WLAN), aber noch keine GPS-Geschwindigkeit. */
+        fun hasPositionOnly(): Boolean =
+            isRunning && !hasFix() && lastPositionTime > 0 &&
+                    SystemClock.elapsedRealtime() - lastPositionTime < 30_000L
+
+        fun secondsSinceStart(): Long =
+            if (startTime == 0L) 0 else (SystemClock.elapsedRealtime() - startTime) / 1000
     }
 
     private val handler = Handler(Looper.getMainLooper())
@@ -67,6 +84,16 @@ class SpeedService : Service(), LocationListener, TextToSpeech.OnInitListener {
     private var lastLocation: Location? = null
     private var noFixAnnounced = false
     private var lastNotificationText = ""
+
+    // Zeigt an, wie viele Satelliten empfangen werden (hilft bei der Fehlersuche)
+    private val gnssCallback = object : GnssStatus.Callback() {
+        override fun onSatelliteStatusChanged(status: GnssStatus) {
+            var used = 0
+            for (i in 0 until status.satelliteCount) if (status.usedInFix(i)) used++
+            satellitesInView = status.satelliteCount
+            satellitesUsed = used
+        }
+    }
 
     private val audioAttributes = AudioAttributes.Builder()
         .setUsage(AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE)
@@ -129,6 +156,8 @@ class SpeedService : Service(), LocationListener, TextToSpeech.OnInitListener {
         isRunning = true
         currentSpeedMs = 0f
         lastFixTime = 0L
+        lastPositionTime = 0L
+        startTime = SystemClock.elapsedRealtime()
         noFixAnnounced = false
 
         tts = TextToSpeech(this, this)
@@ -143,30 +172,65 @@ class SpeedService : Service(), LocationListener, TextToSpeech.OnInitListener {
         if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             return false
         }
-        return try {
-            // Jede Sekunde ein neuer GPS-Wert
+        satellitesInView = 0
+        satellitesUsed = 0
+        var ok = false
+        // 1) Reines GPS, jede Sekunde ein neuer Wert
+        try {
             locationManager.requestLocationUpdates(
                 LocationManager.GPS_PROVIDER, 1000L, 0f, this, Looper.getMainLooper()
             )
-            true
-        } catch (e: Exception) {
-            false
+            ok = true
+        } catch (e: Exception) { }
+
+        // 2) Zusätzlich der Android-Standortdienst (kombiniert GPS, WLAN, Mobilfunk, Sensoren).
+        //    Findet oft schneller ein Signal und liefert auf manchen Handys die bessere Geschwindigkeit.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            try {
+                if (locationManager.hasProvider(LocationManager.FUSED_PROVIDER)) {
+                    locationManager.requestLocationUpdates(
+                        LocationManager.FUSED_PROVIDER, 1000L, 0f, this, Looper.getMainLooper()
+                    )
+                    ok = true
+                }
+            } catch (e: Exception) { }
         }
+
+        try {
+            locationManager.registerGnssStatusCallback(gnssCallback, handler)
+        } catch (e: Exception) { }
+        return ok
     }
 
     // ---------- GPS ----------
 
     override fun onLocationChanged(location: Location) {
-        val speed = if (location.hasSpeed()) location.speed else speedFromDistance(location)
+        lastPositionTime = SystemClock.elapsedRealtime()
+        val fromGps = location.provider == LocationManager.GPS_PROVIDER
+
+        // Position ohne Geschwindigkeit (z. B. über WLAN) ist für den Tacho zu ungenau
+        if (!fromGps && !location.hasSpeed()) {
+            saveObserverIfDue(location)
+            return
+        }
+
+        val speed = when {
+            location.hasSpeed() -> location.speed
+            else -> speedFromDistance(location)
+        }
+        if (fromGps) lastLocation = location
         currentSpeedMs = if (speed < MIN_SPEED_MS) 0f else speed
         lastFixTime = SystemClock.elapsedRealtime()
-        lastLocation = location
         noFixAnnounced = false
 
         val unit = Prefs.unit(this)
         updateNotification("${unit.convert(currentSpeedMs).roundToInt()} ${unit.label}")
 
-        // Standort alle 10 Minuten für die ISS-Berechnung merken
+        saveObserverIfDue(location)
+    }
+
+    /** Standort alle 10 Minuten für die ISS-Berechnung merken. */
+    private fun saveObserverIfDue(location: Location) {
         if (location.time - lastObserverSave > 10 * 60_000L) {
             lastObserverSave = location.time
             IssScheduler.saveObserver(this, location)
@@ -188,6 +252,7 @@ class SpeedService : Service(), LocationListener, TextToSpeech.OnInitListener {
     override fun onStatusChanged(provider: String, status: Int, extras: Bundle?) {}
     override fun onProviderEnabled(provider: String) {}
     override fun onProviderDisabled(provider: String) {
+        if (provider != LocationManager.GPS_PROVIDER) return
         lastFixTime = 0L
         speak("GPS wurde ausgeschaltet")
     }
@@ -285,6 +350,9 @@ class SpeedService : Service(), LocationListener, TextToSpeech.OnInitListener {
         lastFixTime = 0L
         handler.removeCallbacks(announceLoop)
         locationManager.removeUpdates(this)
+        try { locationManager.unregisterGnssStatusCallback(gnssCallback) } catch (e: Exception) { }
+        satellitesInView = 0
+        satellitesUsed = 0
         tts?.stop()
         tts?.shutdown()
         tts = null

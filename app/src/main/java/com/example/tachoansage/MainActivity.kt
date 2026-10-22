@@ -373,8 +373,21 @@ class MainActivity : Activity() {
             }
             else -> {
                 speedValue.text = "--"
-                gpsStatus.text = "Suche GPS-Signal …\n(klappt im Freien am besten)"
                 startStopButton.text = "Stopp"
+                val secs = SpeedService.secondsSinceStart()
+                val inView = SpeedService.satellitesInView
+                val used = SpeedService.satellitesUsed
+                val sats = "Satelliten: $used genutzt, $inView empfangen · seit $secs s"
+                gpsStatus.text = when {
+                    SpeedService.hasPositionOnly() ->
+                        "Standort gefunden, warte auf GPS-Geschwindigkeit …\n$sats"
+                    secs > 45 && inView == 0 ->
+                        "Kein einziger Satellit empfangen.\nBist du drinnen? Geh ins Freie oder ans Fenster.\n$sats"
+                    secs > 90 && used < 4 ->
+                        "Zu wenig Satelliten für eine Position (mind. 4 nötig).\nFreie Sicht zum Himmel hilft.\n$sats"
+                    else ->
+                        "Suche GPS-Signal …\n$sats"
+                }
             }
         }
     }
