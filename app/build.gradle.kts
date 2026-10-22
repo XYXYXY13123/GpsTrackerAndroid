@@ -11,13 +11,28 @@ android {
         applicationId = "com.example.tachoansage"
         minSdk = 26
         targetSdk = 35
-        versionCode = 3
-        versionName = "1.2"
+        versionCode = 4
+        versionName = "1.2.1"
+    }
+
+    // Fester Signaturschlüssel: Damit lassen sich neue Versionen über die alte installieren.
+    // (Ohne ihn würde jeder GitHub-Bau einen neuen Zufallsschlüssel bekommen.)
+    signingConfigs {
+        create("tacho") {
+            storeFile = file("tacho-signing.jks")
+            storePassword = "tachoansage"
+            keyAlias = "tacho"
+            keyPassword = "tachoansage"
+        }
     }
 
     buildTypes {
+        debug {
+            signingConfig = signingConfigs.getByName("tacho")
+        }
         release {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("tacho")
         }
     }
 
