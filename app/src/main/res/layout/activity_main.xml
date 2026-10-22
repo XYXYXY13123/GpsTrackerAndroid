@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#121212"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <!-- Große Geschwindigkeitsanzeige; antippen = sofortige Ansage -->
+        <TextView
+            android:id="@+id/speedValue"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:fontFamily="sans-serif-condensed"
+            android:text="--"
+            android:textColor="#FFFFFF"
+            android:textSize="120sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/unitLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="km/h"
+            android:textColor="#B0B0B0"
+            android:textSize="28sp" />
+
+        <TextView
+            android:id="@+id/gpsStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:gravity="center"
+            android:text="Gestoppt"
+            android:textColor="#FFB74D"
+            android:textSize="16sp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="Zahl antippen = sofort ansagen"
+            android:textColor="#808080"
+            android:textSize="13sp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="36dp"
+            android:text="Ansage alle"
+            android:textColor="#FFFFFF"
+            android:textSize="18sp" />
+
+        <RadioGroup
+            android:id="@+id/intervalGroup"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="Einheit"
+            android:textColor="#FFFFFF"
+            android:textSize="18sp" />
+
+        <RadioGroup
+            android:id="@+id/unitGroup"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal" />
+
+        <Switch
+            android:id="@+id/skipZeroSwitch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="Bei Stillstand nicht ansagen"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp" />
+
+        <Button
+            android:id="@+id/startStopButton"
+            android:layout_width="match_parent"
+            android:layout_height="72dp"
+            android:layout_marginTop="36dp"
+            android:text="Start"
+            android:textSize="22sp" />
+    </LinearLayout>
+</ScrollView>
